@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Echo</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header><h1>Echo</h1>
+    <input id="token" placeholder="token" autocomplete="off"></header>
+
+  <main id="home">
+    <button class="scene" data-scene="drive">开车</button>
+    <button class="scene" data-scene="commute">上下班</button>
+    <button class="scene" data-scene="work">工作</button>
+    <button class="scene" data-scene="rediscover">听腻了 · 翻旧歌</button>
+    <button id="alertsBtn" class="ghost">消失歌曲 ▸</button>
+  </main>
+
+  <section id="queue" hidden>
+    <button class="back" data-target="home">‹ 返回</button>
+    <h2 id="queueTitle"></h2>
+    <ol id="queueList"></ol>
+  </section>
+
+  <section id="alerts" hidden>
+    <button class="back" data-target="home">‹ 返回</button>
+    <h2>消失的歌</h2>
+    <ul id="alertList"></ul>
+  </section>
+
+  <script src="/app.js"></script>
+</body>
+</html>

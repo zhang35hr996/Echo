@@ -1,0 +1,19 @@
+app = "echo-music"
+primary_region = "nrt"
+
+[build]
+
+[env]
+  ECHO_DB_PATH = "/data/echo.db"
+  ECHO_TOKEN_FILE = "/data/token.json"
+  ECHO_CLIENT_SECRET_FILE = "/data/client_secret.json"
+
+[[mounts]]
+  source = "echo_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = false
+  min_machines_running = 1

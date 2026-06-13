@@ -1,0 +1,25 @@
+:root { color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; font: 16px/1.4 -apple-system, system-ui, sans-serif;
+       background: #0f0f12; color: #f2f2f5; padding: env(safe-area-inset-top) 16px 24px; }
+header { display: flex; align-items: center; gap: 12px; padding: 16px 0; }
+header h1 { font-size: 22px; margin: 0; flex: 1; }
+#token { width: 120px; background: #1c1c22; border: 1px solid #333; color: #aaa;
+         border-radius: 8px; padding: 6px 8px; font-size: 12px; }
+.scene { display: block; width: 100%; margin: 10px 0; padding: 22px 18px; font-size: 18px;
+         text-align: left; border: none; border-radius: 16px; color: #fff;
+         background: linear-gradient(135deg, #2a2a35, #3a2a4a); }
+.scene:active { transform: scale(0.99); }
+.ghost { width: 100%; margin-top: 18px; padding: 14px; background: transparent;
+         color: #9a9aff; border: 1px solid #2a2a35; border-radius: 12px; }
+.back { background: none; border: none; color: #9a9aff; font-size: 15px; padding: 8px 0; }
+ol, ul { list-style: none; padding: 0; }
+.row { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid #1e1e26; }
+.row .meta { flex: 1; min-width: 0; }
+.row .title { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .sub { font-size: 12px; color: #888; }
+.row a.play { background: #6a4aff; color: #fff; text-decoration: none;
+              padding: 8px 12px; border-radius: 10px; font-size: 13px; }
+.fb { display: flex; gap: 6px; margin: 6px 0 0; }
+.fb button { flex: 1; font-size: 12px; padding: 6px; border-radius: 8px;
+             border: 1px solid #2a2a35; background: #16161c; color: #ccc; }

@@ -88,9 +88,15 @@ def resolve(alert_id: int, status: str = Query("resolved"),
     return {"ok": True}
 
 
+_scheduler = None
+
+
 @app.on_event("startup")
 def _startup():
+    global _scheduler
     init_db()
+    from echo.scheduler import start_scheduler
+    _scheduler = start_scheduler()
 
 
 # Serve the PWA. Mounted last so /api/* takes precedence.
