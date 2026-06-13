@@ -23,6 +23,22 @@ Open http://localhost:8000, enter the token, pick a scene.
 2. Create an OAuth **Desktop** client, download `client_secret.json` into `backend/`.
 3. First run of the snapshot opens a browser to authorize; `token.json` is saved.
 
+## First run (authorize + load real data)
+
+After `client_secret.json` is in `backend/`, capture the first snapshot on
+demand instead of waiting for the daily 04:00 UTC job:
+
+    cd backend
+    . .venv/bin/activate
+    ECHO_PLAYLIST_ID=PLxxxx python -m echo.first_run
+
+A browser opens for YouTube authorization (saving `token.json`), the playlist is
+read into the canonical track registry, and a baseline snapshot is stored. It
+prints a `snapshots / tracks / open_alerts` summary. Start the server and the
+PWA scene queues now have real songs. (The first run reports `open_alerts=0` —
+disappeared-song detection needs a *previous* snapshot to diff against, which the
+next daily job provides.)
+
 ## Deploy (Fly.io)
 
     cd backend
