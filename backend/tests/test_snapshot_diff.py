@@ -59,3 +59,81 @@ def test_watchdog_flags_missing_and_creates_alert(session):
     assert alerts[0].source_track_id == "b"
     # candidate from registry (norm_title match) recorded
     assert "b-reup" in alerts[0].candidate
+
+
+def _item(v, available=True, reason="", title="T"):
+    return SnapItem(source_track_id=v, title_at_time=title, available=available,
+                    unavailable_reason=reason)
+
+
+def test_diff_detects_unavailable_and_recovered():
+    prev = [_item("a"), _item("b", False, "x"), _item("c", False), _item("d")]
+    cur = [_item("a", False, "private"), _item("b"), _item("c", False), _item("d", title="T2")]
+    ch = diff(prev, cur)
+    assert [i.source_track_id for i in ch.unavailable] == ["a"]
+    assert [i.source_track_id for i in ch.recovered] == ["b"]
+    assert ch.missing == [] and ch.added == []
+    assert [r.source_track_id for r in ch.renamed] == ["d"]
+
+
+def test_watchdog_unavailable_alert_and_track_status(session):
+    upsert_track(session, video_id="a", title="Alpha", artist="")
+    upsert_track(session, video_id="a-reup", title="Alpha", artist="")
+    capture(session, "PL1", [_item("a", title="Alpha")])
+    session.commit()
+    changes = run_watchdog(session, "PL1",
+                           [_item("a", False, "blocked_everywhere", title="Alpha")],
+                           search_fn=lambda q, max_results=3: [])
+    session.commit()
+    assert [i.source_track_id for i in changes.unavailable] == ["a"]
+    alerts = session.query(Alert).all()
+    assert len(alerts) == 1
+    assert alerts[0].kind == "unavailable"
+    assert alerts[0].detail == "blocked_everywhere"
+    assert alerts[0].source_track_id == "a"
+    assert "a-reup" in alerts[0].candidate
+    assert session.query(Track).filter_by(youtube_video_id="a").one().status == "unavailable"
+
+
+def test_watchdog_recovery_restores_status_no_alert(session):
+    upsert_track(session, video_id="a", title="Alpha", artist="")
+    capture(session, "PL1", [_item("a", False, "private", title="Alpha")])
+    session.query(Track).filter_by(youtube_video_id="a").one().status = "unavailable"
+    session.commit()
+    changes = run_watchdog(session, "PL1", [_item("a", title="Alpha")])
+    session.commit()
+    assert [i.source_track_id for i in changes.recovered] == ["a"]
+    assert session.query(Alert).count() == 0
+    assert session.query(Track).filter_by(youtube_video_id="a").one().status == "active"
+
+
+def test_watchdog_unavailable_in_both_snapshots_is_silent(session):
+    capture(session, "PL1", [_item("a", False, "private")])
+    session.commit()
+    changes = run_watchdog(session, "PL1", [_item("a", False, "private")])
+    session.commit()
+    assert changes.unavailable == [] and changes.recovered == []
+    assert session.query(Alert).count() == 0
+
+
+def test_watchdog_readded_track_restored_to_active(session):
+    # active -> missing (removed from playlist) -> re-added with the same video id
+    upsert_track(session, video_id="a", title="Alpha", artist="")
+    session.query(Track).filter_by(youtube_video_id="a").one().status = "missing"
+    capture(session, "PL1", [_item("b", title="Beta")])
+    session.commit()
+    changes = run_watchdog(session, "PL1", [_item("b", title="Beta"), _item("a", title="Alpha")])
+    session.commit()
+    assert [i.source_track_id for i in changes.added] == ["a"]
+    assert session.query(Alert).count() == 0
+    assert session.query(Track).filter_by(youtube_video_id="a").one().status == "active"
+
+
+def test_watchdog_readded_unavailable_track_stays_flagged(session):
+    upsert_track(session, video_id="a", title="Alpha", artist="")
+    session.query(Track).filter_by(youtube_video_id="a").one().status = "missing"
+    capture(session, "PL1", [])
+    session.commit()
+    run_watchdog(session, "PL1", [_item("a", False, "private", title="Alpha")])
+    session.commit()
+    assert session.query(Track).filter_by(youtube_video_id="a").one().status == "missing"

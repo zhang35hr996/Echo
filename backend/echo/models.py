@@ -68,7 +68,7 @@ class Alert(Base):
     __tablename__ = "alerts"
     id: Mapped[int] = mapped_column(primary_key=True)
     snapshot_id: Mapped[int] = mapped_column(ForeignKey("playlist_snapshots.id"), index=True)
-    kind: Mapped[str] = mapped_column(String)  # missing/renamed/reupload
+    kind: Mapped[str] = mapped_column(String)  # missing/renamed/reupload/unavailable
     source_track_id: Mapped[str] = mapped_column(String, index=True)
     title_at_time: Mapped[str] = mapped_column(String, default="")
     artist_at_time: Mapped[str] = mapped_column(String, default="")

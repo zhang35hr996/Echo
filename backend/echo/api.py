@@ -61,7 +61,7 @@ def alerts(session: Session = Depends(get_session)):
         select(Alert).where(Alert.resolution_status == "open").order_by(Alert.detected_at.desc())
     ).all()
     return [{"id": a.id, "kind": a.kind, "source_track_id": a.source_track_id,
-             "title_at_time": a.title_at_time, "candidate": a.candidate,
+             "title_at_time": a.title_at_time, "detail": a.detail, "candidate": a.candidate,
              "detected_at": a.detected_at.isoformat()} for a in rows]
 
 

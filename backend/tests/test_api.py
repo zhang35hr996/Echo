@@ -22,7 +22,7 @@ def client():
     with TestSession() as s:
         s.add(Track(youtube_video_id="v1", title="Song", norm_title="song", norm_artist=""))
         s.add(Alert(snapshot_id=1, kind="missing", source_track_id="gone",
-                    title_at_time="Gone Song", candidate="[]"))
+                    title_at_time="Gone Song", candidate="[]", detail="why"))
         s.commit()
     yield TestClient(api.app)
     api.app.dependency_overrides.clear()
@@ -53,6 +53,7 @@ def test_alerts_lists_open_missing(client):
     r = client.get("/api/alerts", headers=HEADERS)
     assert r.status_code == 200
     assert r.json()[0]["source_track_id"] == "gone"
+    assert r.json()[0]["detail"] == "why"
 
 
 def test_feedback_records(client):
