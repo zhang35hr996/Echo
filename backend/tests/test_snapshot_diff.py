@@ -114,3 +114,26 @@ def test_watchdog_unavailable_in_both_snapshots_is_silent(session):
     session.commit()
     assert changes.unavailable == [] and changes.recovered == []
     assert session.query(Alert).count() == 0
+
+
+def test_watchdog_readded_track_restored_to_active(session):
+    # active -> missing (removed from playlist) -> re-added with the same video id
+    upsert_track(session, video_id="a", title="Alpha", artist="")
+    session.query(Track).filter_by(youtube_video_id="a").one().status = "missing"
+    capture(session, "PL1", [_item("b", title="Beta")])
+    session.commit()
+    changes = run_watchdog(session, "PL1", [_item("b", title="Beta"), _item("a", title="Alpha")])
+    session.commit()
+    assert [i.source_track_id for i in changes.added] == ["a"]
+    assert session.query(Alert).count() == 0
+    assert session.query(Track).filter_by(youtube_video_id="a").one().status == "active"
+
+
+def test_watchdog_readded_unavailable_track_stays_flagged(session):
+    upsert_track(session, video_id="a", title="Alpha", artist="")
+    session.query(Track).filter_by(youtube_video_id="a").one().status = "missing"
+    capture(session, "PL1", [])
+    session.commit()
+    run_watchdog(session, "PL1", [_item("a", False, "private", title="Alpha")])
+    session.commit()
+    assert session.query(Track).filter_by(youtube_video_id="a").one().status == "missing"

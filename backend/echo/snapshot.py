@@ -118,8 +118,11 @@ def run_watchdog(session: Session, playlist_id: str, fetched: list[SnapItem],
             track = _track_for(session, m.source_track_id)
             if track:
                 track.status = kind
-    for r in changes.recovered:
+    # Playable again: either flipped back to available, or re-added to the playlist
+    # after having gone missing. upsert_track() never resets status, so do it here.
+    readded = [a for a in changes.added if a.available]
+    for r in changes.recovered + readded:
         track = _track_for(session, r.source_track_id)
-        if track and track.status == "unavailable":
+        if track and track.status in ("missing", "unavailable"):
             track.status = "active"
     return changes

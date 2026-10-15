@@ -95,7 +95,20 @@ def test_availability_precedence():
         vid("b", region={"blocked": blocked + ["JP"]}),
     ]}
     out = parse_video_availability(raw, ["p", "u", "b"], home_region="JP")
-    assert out == {"p": "private", "u": "upload_failed", "b": "blocked_everywhere"}
+    assert out == {"p": "private", "u": "upload_failed", "b": "blocked_in_JP"}
+    assert parse_video_availability(raw, ["b"]) == {"b": "blocked_everywhere"}
+
+
+def test_availability_home_region_overrides_long_blocked_list():
+    # Blocked in many regions but NOT at home: playable for the owner, so no flag.
+    blocked = [f"R{i}" for i in range(GLOBAL_BLOCK_THRESHOLD)]
+    raw = {"items": [vid("a", region={"blocked": blocked})]}
+    assert parse_video_availability(raw, ["a"], home_region="JP") == {}
+    assert parse_video_availability(raw, ["a"], home_region="R1") == {"a": "blocked_in_R1"}
+    assert parse_video_availability(raw, ["a"]) == {"a": "blocked_everywhere"}
+    # An explicit empty allow-list is authoritative regardless of home region.
+    empty = {"items": [vid("a", region={"allowed": []})]}
+    assert parse_video_availability(empty, ["a"], home_region="JP") == {"a": "blocked_everywhere"}
 
 
 class _Exec:

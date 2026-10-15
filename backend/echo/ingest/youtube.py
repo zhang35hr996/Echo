@@ -73,11 +73,14 @@ def parse_video_availability(raw: dict, requested_ids: list[str],
             out[vid] = "private"
         elif status.get("uploadStatus") in _BAD_UPLOAD:
             out[vid] = f"upload_{status['uploadStatus']}"
-        elif (allowed is not None and len(allowed) == 0) or \
-                len(blocked or []) >= GLOBAL_BLOCK_THRESHOLD:
-            out[vid] = "blocked_everywhere"
-        elif home and (home in (blocked or []) or (allowed and home not in allowed)):
-            out[vid] = f"blocked_in_{home}"
+        elif allowed is not None and len(allowed) == 0:
+            out[vid] = "blocked_everywhere"  # explicit empty allow-list is authoritative
+        elif home:
+            # Owner's region is known: judge playability there, nothing else.
+            if home in (blocked or []) or (allowed and home not in allowed):
+                out[vid] = f"blocked_in_{home}"
+        elif len(blocked or []) >= GLOBAL_BLOCK_THRESHOLD:
+            out[vid] = "blocked_everywhere"  # heuristic fallback when no home region
     return out
 
 
