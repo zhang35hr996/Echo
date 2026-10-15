@@ -69,8 +69,10 @@ async function openAlerts() {
     const li = document.createElement("li"); li.className = "row";
     const cands = JSON.parse(a.candidate || "[]");
     const candTxt = cands.map((c) => c.title).join(" / ") || "无候选";
+    const label = { missing: "消失", unavailable: "已下架/不可播" }[a.kind] || a.kind;
+    const detail = a.detail ? ` (${a.detail})` : "";
     li.innerHTML = `<div class="meta"><div class="title">${a.title_at_time}</div>
-      <div class="sub">候选: ${candTxt}</div></div>`;
+      <div class="sub">${label}${detail} · 候选: ${candTxt}</div></div>`;
     list.appendChild(li);
   });
 }

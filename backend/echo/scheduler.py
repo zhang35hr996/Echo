@@ -24,8 +24,9 @@ def run_daily_snapshot() -> None:
                              title=it.title_at_time, artist=it.artist_at_time)
         changes = run_watchdog(session, settings.playlist_id, fetched, search_fn=search_videos)
         session.commit()
-        log.info("snapshot ok: %d missing, %d added, %d renamed",
-                 len(changes.missing), len(changes.added), len(changes.renamed))
+        log.info("snapshot ok: %d missing, %d added, %d renamed, %d unavailable, %d recovered",
+                 len(changes.missing), len(changes.added), len(changes.renamed),
+                 len(changes.unavailable), len(changes.recovered))
     except Exception:
         session.rollback()
         log.exception("daily snapshot failed; previous snapshot retained")

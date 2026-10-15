@@ -58,6 +58,9 @@ long-unplayed favorites. Logic branches on `scene == REDISCOVER_SCENE` in
 - **tz-aware vs naive datetimes**: `utcnow()` is aware, SQLite round-trips to
   naive → subtracting them raises `TypeError`. `recommend.py` has a `_normalize`
   guard for this; watch for the same trap anywhere you subtract a stored datetime.
+- **Playability check**: the watchdog also calls `videos.list` to flag songs that stay in the
+  playlist but are private/deleted/region-blocked (`unavailable` alerts); `ECHO_HOME_REGION`
+  optionally flags blocks for your country.
 - **Watchdog never false-flags on API failure**: `run_daily_snapshot` only diffs
   after a fully successful fetch; on error it rolls back and keeps the last
   snapshot. Disappeared detection needs a *previous* snapshot to diff against.

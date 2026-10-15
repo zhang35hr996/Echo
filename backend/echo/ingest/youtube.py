@@ -9,6 +9,8 @@ from echo.snapshot import SnapItem
 
 SCOPES = ["https://www.googleapis.com/auth/youtube.readonly"]
 _UNAVAILABLE_TITLES = {"Private video", "Deleted video", "[Private video]", "[Deleted video]"}
+GLOBAL_BLOCK_THRESHOLD = 240  # YouTube has ~249 region codes; this many blocked == worldwide
+_BAD_UPLOAD = {"rejected", "failed", "deleted"}
 _DUR = re.compile(r"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?")
 
 
@@ -52,7 +54,49 @@ def _credentials() -> Credentials:
     return creds
 
 
-def get_playlist_items(playlist_id: str) -> list[SnapItem]:
+def parse_video_availability(raw: dict, requested_ids: list[str],
+                             home_region: str = "") -> dict[str, str]:
+    """Map video_id -> reason for ids that are unplayable. Pure function."""
+    home = (home_region or "").upper()
+    found = {it.get("id"): it for it in raw.get("items", [])}
+    out: dict[str, str] = {}
+    for vid in requested_ids:
+        it = found.get(vid)
+        if it is None:
+            out[vid] = "not_found"
+            continue
+        status = it.get("status", {})
+        rr = it.get("contentDetails", {}).get("regionRestriction") or {}
+        blocked = rr.get("blocked")
+        allowed = rr.get("allowed")
+        if status.get("privacyStatus") == "private":
+            out[vid] = "private"
+        elif status.get("uploadStatus") in _BAD_UPLOAD:
+            out[vid] = f"upload_{status['uploadStatus']}"
+        elif (allowed is not None and len(allowed) == 0) or \
+                len(blocked or []) >= GLOBAL_BLOCK_THRESHOLD:
+            out[vid] = "blocked_everywhere"
+        elif home and (home in (blocked or []) or (allowed and home not in allowed)):
+            out[vid] = f"blocked_in_{home}"
+    return out
+
+
+def get_video_availability(video_ids: list[str], yt=None) -> dict[str, str]:
+    """Return {video_id: reason} for unplayable ids. Raises on API failure."""
+    ids = list(dict.fromkeys(v for v in video_ids if v))
+    if not ids:
+        return {}
+    yt = yt or build("youtube", "v3", credentials=_credentials())
+    out: dict[str, str] = {}
+    for k in range(0, len(ids), 50):
+        batch = ids[k:k + 50]
+        resp = yt.videos().list(part="status,contentDetails", id=",".join(batch),
+                                maxResults=50).execute()
+        out.update(parse_video_availability(resp, batch, home_region=settings.home_region))
+    return out
+
+
+def get_playlist_items(playlist_id: str, check_availability: bool = True) -> list[SnapItem]:
     """Fetch all items of a playlist. Raises on API failure (caller handles)."""
     yt = build("youtube", "v3", credentials=_credentials())
     items: list[SnapItem] = []
@@ -65,6 +109,15 @@ def get_playlist_items(playlist_id: str) -> list[SnapItem]:
         page_token = resp.get("nextPageToken")
         if not page_token:
             break
+    for it in items:
+        if not it.available and not it.unavailable_reason:
+            it.unavailable_reason = "title_marker"
+    if check_availability:
+        by_id = {it.source_track_id: it for it in items
+                 if it.available and it.source_track_id}
+        for vid, reason in get_video_availability(list(by_id), yt=yt).items():
+            by_id[vid].available = False
+            by_id[vid].unavailable_reason = reason
     return items
 
 

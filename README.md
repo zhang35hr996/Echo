@@ -56,5 +56,6 @@ Upload `client_secret.json`/`token.json` to the `/data` volume (e.g. via
 |---|---|---|
 | `ECHO_SHARED_TOKEN` | `dev-token` | access guard sent as `X-Echo-Token` |
 | `ECHO_PLAYLIST_ID` | (empty) | YouTube playlist to watch |
+| `ECHO_HOME_REGION` | (empty) | Optional ISO country code (e.g. `JP`); the watchdog also flags songs region-blocked there. Worldwide blocks are always flagged. |
 | `ECHO_DB_PATH` | `echo.db` | SQLite file |
 | `ECHO_SNAPSHOT_HOUR` | `4` | daily snapshot hour (UTC) |

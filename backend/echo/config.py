@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     client_secret_file: str = "client_secret.json"
     token_file: str = "token.json"
     web_dir: str = str(Path(__file__).resolve().parent.parent / "web")
+    home_region: str = ""                    # ISO 3166-1 alpha-2 (e.g. JP); flags region blocks
     snapshot_hour: int = 4                   # daily job hour (local)
 
 
